@@ -6,9 +6,9 @@ import { ECP } from '@dlenroc/roku-ecp'
 import { ODC } from '@dlenroc/roku-odc'
 import { writeFileSync, readFileSync, existsSync, unlinkSync } from 'fs'
 import { exit } from 'process'
-import os from 'os'
+import { homedir } from 'os'
 
-const DOTENV_FILE_PATH = `${os.homedir()}/.roku_env`
+const DOTENV_FILE_PATH = `${homedir()}/.roku_env`
 dotenv.config({ path: DOTENV_FILE_PATH })
 
 const exitCodes = {
@@ -92,7 +92,7 @@ const odc = new ODC(IP)
 
 if ('init' in cliCommands) {
   if (typeof cliCommands.init !== 'string' || cliCommands.init.split(' ').length !== 3) {
-    console.error(`Init info must contain dev server IP, username and password`)
+    console.error(`Init info must contain device IP, username and password`)
     exit(exitCodes.INIT_INFO_INVALID)
   }
 
@@ -121,6 +121,7 @@ if ('init' in cliCommands) {
 
   try {
     const app = readFileSync(cliCommands.install)
+    // ODC injection
     const patchedApp = await odc.extend(app)
     await developerServer.install(patchedApp)
     console.log(`Dev channel installed successfully!`)
