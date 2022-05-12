@@ -30,12 +30,12 @@ const cliCommandDefinitions = [
     name: 'init',
     alias: 'g',
     type: String,
-    description: 'Initialize the Roku Developer Server'
+    description: 'Initialize the Roku CLI'
   },
   {
     name: 'cli-reset',
     type: String,
-    description: 'De-initialize the Roku Developer Server'
+    description: 'De-initialize the Roku CLI'
   },
   {
     name: 'install',
@@ -99,7 +99,7 @@ if ('init' in cliCommands) {
   try {
     const [IP, USERNAME, PASSWORD] = cliCommands.init.split(' ')
     writeFileSync(DOTENV_FILE_PATH, `IP="${IP}"\nUSERNAME="${USERNAME}"\nPASSWORD="${PASSWORD}"`)
-    console.log("Initialized Roku dev server")
+    console.log("Initialized Roku CLI")
   } catch (e) {
     console.error(`Roku CLI initialization failed with error: ${e}`)
     exit(exitCodes.INIT_FAILED)
