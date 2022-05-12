@@ -1,0 +1,22 @@
+{
+  "name": "roku-cli",
+  "version": "1.0.0",
+  "description": "",
+  "main": "bin/index.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "gaurav.s",
+  "license": "ISC",
+  "bin": {
+    "roku": "./bin/index.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.1",
+    "command-line-args": "^5.2.1",
+    "@dlenroc/roku-developer-server": "^1.0.0",
+    "@dlenroc/roku-ecp": "^1.1.1",
+    "@dlenroc/roku-odc": "^1.4.1"
+  },
+  "type": "module"
+}
