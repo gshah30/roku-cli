@@ -1,7 +1,7 @@
 #! /usr/bin/env node
 import dotenv from 'dotenv'
 import commandLineArgs from '../node_modules/command-line-args/dist/index.mjs'
-import { DeveloperServer } from '@dlenroc/roku-developer-server'
+import { DeveloperServerExecutor, deleteChannel, installChannel, takeScreenshot } from '@dlenroc/roku-developer-server'
 import { ECP } from '@dlenroc/roku-ecp'
 import { ODC } from '@dlenroc/roku-odc'
 import { writeFileSync, readFileSync, existsSync, unlinkSync } from 'fs'
@@ -86,9 +86,13 @@ if (!('init' in cliCommands) && (!IP || !USERNAME || !PASSWORD)) {
   exit(exitCodes.INIT_INFO_INVALID)
 }
 
-const developerServer = new DeveloperServer(IP, USERNAME, PASSWORD)
 const ecp = new ECP(IP)
 const odc = new ODC(IP)
+const ctx = new DeveloperServerExecutor({
+  address: `http://${IP}`,
+  username: USERNAME,
+  password: PASSWORD,
+});
 
 if ('init' in cliCommands) {
   if (typeof cliCommands.init !== 'string' || cliCommands.init.split(' ').length !== 3) {
@@ -123,7 +127,7 @@ if ('init' in cliCommands) {
     const app = readFileSync(cliCommands.install)
     // ODC injection
     const patchedApp = await odc.extend(app)
-    await developerServer.install(patchedApp)
+    await installChannel(ctx, { content: patchedApp });
     console.log(`Dev channel installed successfully!`)
 
   } catch (e) {
@@ -133,7 +137,7 @@ if ('init' in cliCommands) {
 
 } else if ('delete' in cliCommands) {
   try {
-    await developerServer.delete()
+    await deleteChannel(ctx);
     console.log(`Dev channel uninstalled successfully`)
   } catch (e) {
     console.error(`Channel delete failed with error: ${e}`)
@@ -142,16 +146,30 @@ if ('init' in cliCommands) {
 
 } else if ('screenshot' in cliCommands) {
   if (typeof cliCommands.screenshot != 'string') {
+    // Default to saving in the current directory if no path is specified
     cliCommands.screenshot = "image"
   }
 
   try {
-    const ss = await developerServer.getScreenshot()
-    writeFileSync(`${cliCommands.screenshot}.png`, ss)
-    console.log(`Saved screenshot as ${cliCommands.screenshot}.png`)
+    const screenshotPathOnDevice = await takeScreenshot(ctx);
+    const response = await ctx.execute(screenshotPathOnDevice);
+    const arrayBuffer = await response.arrayBuffer();
+    // Convert ArrayBuffer to Buffer
+    const ss = Buffer.from(arrayBuffer);
+
+    let userProvidedPath = cliCommands.screenshot;
+    // Handle '~/' for home directory
+    if (userProvidedPath.startsWith('~/')) {
+      userProvidedPath = `${homedir()}/${userProvidedPath.substring(2)}`;
+    }
+    
+    const finalOutputPath = `${userProvidedPath}.png`;
+
+    writeFileSync(finalOutputPath, ss);
+    console.log(`Saved screenshot as ${finalOutputPath}`);
   } catch (e) {
-    console.error(`Get screenshot failed with error: ${e}`)
-    exit(exitCodes.SCREENSHOT_CAPTURE_FAILED)
+    console.error(`Get screenshot failed with error: ${e}`);
+    exit(exitCodes.SCREENSHOT_CAPTURE_FAILED);
   }
 } else if ('get-active-app-id' in cliCommands) {
   try {
